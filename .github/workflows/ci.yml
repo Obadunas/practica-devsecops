@@ -1,0 +1,26 @@
+name: CI DevSecOps
+
+[cite_start]on: [push] # Se ejecuta cada vez que haces "git push" [cite: 110]
+
+jobs:
+  build-and-scan:
+    [cite_start]runs-on: ubuntu-latest # Se ejecuta en un servidor de GitHub [cite: 112, 113]
+    steps:
+      - name: Checkout código
+        [cite_start]uses: actions/checkout@v2 # Descarga tu código en el servidor [cite: 115]
+
+      - name: Build Docker Image
+        run: docker build -t my-app:${{ github.sha }} . # Construye la imagen [cite: 118]
+
+      - name: Scan image with Trivy (Vulnerabilidades)
+        [cite_start]uses: aquasecurity/trivy-action@master # Escaneo de seguridad [cite: 124, 125]
+        with:
+          image-ref: 'my-app:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1' # Si encuentra fallos graves, el pipeline falla
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Gitleaks (Filtración de secretos)
+        [cite_start]uses: gitleaks/gitleaks-action@v2 # Busca contraseñas expuestas [cite: 128]
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
